@@ -64,6 +64,7 @@ def greedify_policy(Q_vals):
 	return greedy_policy
 
 def policy_evaluation(environment, Value_fn, policy, gamma=0.9, theta=1e-8):
+	Value_fn = np.zeros(environment.obs.n)
 	while True:
 		delta = 0
 		for state in range(environment.obs.n):
@@ -146,5 +147,80 @@ def plot_performance_policy_iteration(env_class,name):
 	plt.legend()
 	plt.show()
 
+def value_iteration(environment, gamma=0.9, theta=1e-8):
+	V = np.zeros(environment.obs.n)
+	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	while True:
+		# plt.imshow(V.reshape(4,4)); plt.colorbar(); plt.show()
+		delta = 0
+		for state in range(environment.obs.n):
+			Vs = V[state]
+			q_vals = np.zeros(environment.actions.n)
+			for action in range(environment.actions.n):
+				for next_state in range(environment.obs.n):
+					q_vals[action] += environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*V[next_state])
+			V[state] = np.max(q_vals)
+			delta = max(delta, np.abs(Vs-V[state]))
+			pi[state] = greedify_policy(q_vals)
+		if delta<theta:
+			break
+	print(pi)
+	plt.imshow(V.reshape(4,4)); plt.colorbar(); plt.show()
+	return V, pi
+
+def value_iteration_with_performance(environment, gamma=0.9, theta=1e-8,iterations=100):
+	V = np.zeros(environment.obs.n)
+	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	cumulative_reward_array = np.zeros(iterations)
+	total_steps_array = np.zeros(iterations)
+	for iter in tqdm(range(iterations)):
+		cumulative_reward_array[iter], total_steps_array[iter] = environment.run_episode(pi,gamma=gamma)
+		for state in range(environment.obs.n):
+			Vs = V[state]
+			q_vals = np.zeros(environment.actions.n)
+			for action in range(environment.actions.n):
+				for next_state in range(environment.obs.n):
+					q_vals[action] += environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*V[next_state])
+			V[state] = np.max(q_vals)
+			pi[state] = greedify_policy(q_vals)
+	return cumulative_reward_array, total_steps_array
+
+def plot_performance_value_iteration(env_class,name):
+	cumulative_reward_array_plot = []
+	total_steps_array_plot = []
+	for seed in range(5):
+		np.random.seed(seed)
+		F = env_class(name=name,seed=seed)
+		# F.env.render()
+		cumulative_reward_array, total_steps_array = value_iteration_with_performance(F,gamma=0.9,theta=1e-9)
+		cumulative_reward_array_plot.append(cumulative_reward_array)
+		total_steps_array_plot.append(total_steps_array)
+	cumulative_reward_array_plot = np.array(cumulative_reward_array_plot)
+	cumulative_reward_array_mean = np.mean(cumulative_reward_array_plot,axis=0)
+	cumulative_reward_array_std = np.std(cumulative_reward_array_plot,axis=0)
+	total_steps_array_plot = np.array(total_steps_array_plot)
+	total_steps_array_mean = np.mean(total_steps_array_plot,axis=0)
+	total_steps_array_std = np.std(total_steps_array_plot,axis=0)
+	plt.figure(1);
+	plt.plot(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean,label='Mean cumulative reward of an episode')
+	plt.fill_between(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean-cumulative_reward_array_std,cumulative_reward_array_mean+cumulative_reward_array_std,alpha=0.4)
+	plt.axhline(y=np.max(cumulative_reward_array_plot),color='k',linestyle='--',label='Maximum cumulative reward of an episode')
+	plt.title('Cumulative Reward vs episodes with Value iteration')
+	plt.ylabel('Cumulative reward')
+	plt.xlabel('Episodes')
+	plt.legend()
+	plt.figure(2);
+	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean,label='Mean steps of an episode')
+	plt.fill_between(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean-total_steps_array_std,total_steps_array_mean+total_steps_array_std,alpha=0.4)
+	plt.axhline(y=np.min(total_steps_array_plot),color='k',linestyle='--',label='Minimum number of steps for an episode')
+	plt.title('Total steps per episode vs episodes with Value iteration')
+	plt.ylabel('Total steps/episode')
+	plt.xlabel('Episodes')
+	plt.legend()
+	plt.show()
+
 if __name__ == '__main__':
-	plot_performance_policy_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
+	# policy_iteration(FrozenLakeClass('FrozenLake-v0'),gamma=1)
+	# plot_performance_policy_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
+	# value_iteration(FrozenLakeClass('FrozenLake-v0'),gamma=1)
+	plot_performance_value_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
