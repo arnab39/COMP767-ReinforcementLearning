@@ -129,17 +129,21 @@ def plot_performance_policy_iteration(env_class,name):
 	total_steps_array_mean = np.mean(total_steps_array_plot,axis=0)
 	total_steps_array_std = np.std(total_steps_array_plot,axis=0)
 	plt.figure(1);
-	plt.plot(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean)
+	plt.plot(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean,label='Mean cumulative reward of an episode')
 	plt.fill_between(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean-cumulative_reward_array_std,cumulative_reward_array_mean+cumulative_reward_array_std,alpha=0.4)
+	plt.axhline(y=np.max(cumulative_reward_array_plot),color='k',linestyle='--',label='Maximum cumulative reward of an episode')
 	plt.title('Cumulative Reward vs episodes with Policy iteration')
 	plt.ylabel('Cumulative reward')
 	plt.xlabel('Episodes')
+	plt.legend()
 	plt.figure(2);
-	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean)
+	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean,label='Mean steps of an episode')
 	plt.fill_between(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean-total_steps_array_std,total_steps_array_mean+total_steps_array_std,alpha=0.4)
+	plt.axhline(y=np.min(total_steps_array_plot),color='k',linestyle='--',label='Minimum number of steps for an episode')
 	plt.title('Total steps per episode vs episodes with Policy iteration')
 	plt.ylabel('Total steps/episode')
 	plt.xlabel('Episodes')
+	plt.legend()
 	plt.show()
 
 if __name__ == '__main__':
