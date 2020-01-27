@@ -7,6 +7,7 @@ import gym
 class FrozenLakeClass():
 	def __init__(self,name='FrozenLake-v0',seed=13):
 		self.env = gym.make(name)
+		self.env.seed(seed)
 		self.env.reset()
 		self.obs = self.env.observation_space
 		self.actions = self.env.action_space
@@ -210,7 +211,7 @@ def plot_performance_value_iteration(env_class,name):
 	plt.xlabel('Episodes')
 	plt.legend()
 	plt.figure(2);
-	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean,label='Mean steps of an episode')
+	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean,label='Mean number of steps of an episode')
 	plt.fill_between(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean-total_steps_array_std,total_steps_array_mean+total_steps_array_std,alpha=0.4)
 	plt.axhline(y=np.min(total_steps_array_plot),color='k',linestyle='--',label='Minimum number of steps for an episode')
 	plt.title('Total steps per episode vs episodes with Value iteration')
