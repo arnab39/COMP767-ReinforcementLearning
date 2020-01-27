@@ -41,13 +41,13 @@ class FrozenLakeClass():
 			p = np.random.uniform(0,1)
 			action = np.where(prob_action>p)[0][0]
 			observation, reward, done, info = self.env.step(action)
-			cumulative_reward += reward*(gamma**t)
+			cumulative_reward += reward
 			total_steps += 1
 			if done and reward==1:
 				break
 			elif done and reward==0:
 				attempts += 1
-				cumulative_reward -= 1*(gamma**t)
+				cumulative_reward -= 1
 				total_steps += self.max_T
 				observation = self.env.reset()
 
@@ -112,10 +112,11 @@ def policy_iteration_with_performance(environment, gamma=0.9, theta=1e-8, iterat
 		pi, policy_stable = policy_improvement(environment,V,pi,gamma)
 	return cumulative_reward_array, total_steps_array
 
-def plot_performance(env_class,name):
+def plot_performance_policy_iteration(env_class,name):
 	cumulative_reward_array_plot = []
 	total_steps_array_plot = []
 	for seed in range(5):
+		np.random.seed(seed)
 		F = env_class(name=name,seed=seed)
 		# F.env.render()
 		cumulative_reward_array, total_steps_array = policy_iteration_with_performance(F,gamma=0.9,theta=1e-9)
@@ -130,16 +131,16 @@ def plot_performance(env_class,name):
 	plt.figure(1);
 	plt.plot(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean)
 	plt.fill_between(np.linspace(1,len(cumulative_reward_array_mean),len(cumulative_reward_array_mean)),cumulative_reward_array_mean-cumulative_reward_array_std,cumulative_reward_array_mean+cumulative_reward_array_std,alpha=0.4)
-	plt.title('Cumulative Reward vs episodes')
+	plt.title('Cumulative Reward vs episodes with Policy iteration')
 	plt.ylabel('Cumulative reward')
 	plt.xlabel('Episodes')
 	plt.figure(2);
 	plt.plot(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean)
 	plt.fill_between(np.linspace(1,len(total_steps_array_mean),len(total_steps_array_mean)),total_steps_array_mean-total_steps_array_std,total_steps_array_mean+total_steps_array_std,alpha=0.4)
-	plt.title('Total steps per episode vs episodes')
+	plt.title('Total steps per episode vs episodes with Policy iteration')
 	plt.ylabel('Total steps/episode')
 	plt.xlabel('Episodes')
 	plt.show()
 
 if __name__ == '__main__':
-	plot_performance(env_class=FrozenLakeClass, name='FrozenLake-v0')
+	plot_performance_policy_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
