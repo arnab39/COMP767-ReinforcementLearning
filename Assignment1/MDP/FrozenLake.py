@@ -11,9 +11,11 @@ class FrozenLakeClass():
 		self.env.reset()
 		self.obs = self.env.observation_space
 		self.actions = self.env.action_space
+		self.num_states = self.obs.n
+		self.num_actions = self.actions.n
 		self.transition, self.rewards = self.transition_reward_matrix()
 		np.random.seed(seed)
-		self.max_T = self.obs.n*3
+		self.max_T = self.num_states*3
 
 	def valid_action(self, a):
 		assert self.actions.contains(a), "Invalid action chosen!!"
@@ -22,10 +24,10 @@ class FrozenLakeClass():
 		assert self.obs.contains(s), "Invalid state reached!!"
 
 	def transition_reward_matrix(self):
-		P = np.zeros((self.obs.n,self.actions.n,self.obs.n))
-		R = np.zeros((self.obs.n,self.actions.n,self.obs.n))
-		for s in range(self.obs.n):
-			for a in range(self.actions.n):
+		P = np.zeros((self.num_states,self.num_actions,self.num_states))
+		R = np.zeros((self.num_states,self.num_actions,self.num_states))
+		for s in range(self.num_states):
+			for a in range(self.num_actions):
 				for entry in self.env.P[s][a]:
 					P[s][a][entry[1]] = entry[0]
 					R[s][a][entry[1]] = entry[2]
@@ -65,13 +67,13 @@ def greedify_policy(Q_vals):
 	return greedy_policy
 
 def policy_evaluation(environment, Value_fn, policy, gamma=0.9, theta=1e-8):
-	Value_fn = np.zeros(environment.obs.n)
+	Value_fn = np.zeros(environment.num_states)
 	while True:
 		delta = 0
-		for state in range(environment.obs.n):
+		for state in range(environment.num_states):
 			Vs = 0
-			for action in range(environment.actions.n):
-				for next_state in range(environment.obs.n):
+			for action in range(environment.num_actions):
+				for next_state in range(environment.num_states):
 					Vs += policy[state][action]*environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*Value_fn[next_state])
 			delta = max(delta, np.abs(Vs-Value_fn[state]))
 			Value_fn[state] = Vs
@@ -81,11 +83,11 @@ def policy_evaluation(environment, Value_fn, policy, gamma=0.9, theta=1e-8):
 
 def policy_improvement(environment, Value_fn, curr_policy, gamma=0.9):
 	policy_stable = True
-	for state in range(environment.obs.n):
+	for state in range(environment.num_states):
 		temp = curr_policy[state].copy()
-		q_vals = np.zeros(environment.actions.n)
-		for action in range(environment.actions.n):
-			for next_state in range(environment.obs.n):
+		q_vals = np.zeros(environment.num_actions)
+		for action in range(environment.num_actions):
+			for next_state in range(environment.num_states):
 				q_vals[action] += environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*Value_fn[next_state])
 		curr_policy[state] = greedify_policy(q_vals)
 		if not np.array_equal(curr_policy[state], temp):
@@ -93,8 +95,10 @@ def policy_improvement(environment, Value_fn, curr_policy, gamma=0.9):
 	return curr_policy, policy_stable
 
 def policy_iteration(environment, gamma=0.9, theta=1e-8):
-	V = np.zeros(environment.obs.n)
-	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	V = np.zeros(environment.num_states)
+	# pi = np.ones((environment.num_states,environment.num_actions))/environment.num_actions 
+	pi = np.random.rand(environment.num_states,environment.num_actions)
+	pi = pi/pi.sum(axis=1,keepdims=True)
 	policy_stable = False
 	while not policy_stable:
 		V = policy_evaluation(environment,V,pi,gamma,theta)
@@ -104,8 +108,10 @@ def policy_iteration(environment, gamma=0.9, theta=1e-8):
 	return V, pi
 
 def policy_iteration_with_performance(environment, gamma=0.9, theta=1e-8, iterations=100):
-	V = np.zeros(environment.obs.n)
-	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	V = np.zeros(environment.num_states)
+	# pi = np.ones((environment.num_states,environment.num_actions))/environment.num_actions 
+	pi = np.random.rand(environment.num_states,environment.num_actions)
+	pi = pi/pi.sum(axis=1,keepdims=True)
 	cumulative_reward_array = np.zeros(iterations)
 	total_steps_array = np.zeros(iterations)
 	for iter in tqdm(range(iterations)):
@@ -149,16 +155,18 @@ def plot_performance_policy_iteration(env_class,name):
 	plt.show()
 
 def value_iteration(environment, gamma=0.9, theta=1e-8):
-	V = np.zeros(environment.obs.n)
-	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	V = np.zeros(environment.num_states)
+	# pi = np.ones((environment.num_states,environment.num_actions))/environment.num_actions 
+	pi = np.random.rand(environment.num_states,environment.num_actions)
+	pi = pi/pi.sum(axis=1,keepdims=True)
 	while True:
 		# plt.imshow(V.reshape(4,4)); plt.colorbar(); plt.show()
 		delta = 0
-		for state in range(environment.obs.n):
+		for state in range(environment.num_states):
 			Vs = V[state]
-			q_vals = np.zeros(environment.actions.n)
-			for action in range(environment.actions.n):
-				for next_state in range(environment.obs.n):
+			q_vals = np.zeros(environment.num_actions)
+			for action in range(environment.num_actions):
+				for next_state in range(environment.num_states):
 					q_vals[action] += environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*V[next_state])
 			V[state] = np.max(q_vals)
 			delta = max(delta, np.abs(Vs-V[state]))
@@ -170,17 +178,19 @@ def value_iteration(environment, gamma=0.9, theta=1e-8):
 	return V, pi
 
 def value_iteration_with_performance(environment, gamma=0.9, theta=1e-8,iterations=100):
-	V = np.zeros(environment.obs.n)
-	pi = np.ones((environment.obs.n,environment.actions.n))/environment.actions.n 
+	V = np.zeros(environment.num_states)
+	# pi = np.ones((environment.num_states,environment.num_actions))/environment.num_actions 
+	pi = np.random.rand(environment.num_states,environment.num_actions)
+	pi = pi/pi.sum(axis=1,keepdims=True)
 	cumulative_reward_array = np.zeros(iterations)
 	total_steps_array = np.zeros(iterations)
 	for iter in tqdm(range(iterations)):
 		cumulative_reward_array[iter], total_steps_array[iter] = environment.run_episode(pi,gamma=gamma)
-		for state in range(environment.obs.n):
+		for state in range(environment.num_states):
 			Vs = V[state]
-			q_vals = np.zeros(environment.actions.n)
-			for action in range(environment.actions.n):
-				for next_state in range(environment.obs.n):
+			q_vals = np.zeros(environment.num_actions)
+			for action in range(environment.num_actions):
+				for next_state in range(environment.num_states):
 					q_vals[action] += environment.transition[state][action][next_state]*(environment.rewards[state][action][next_state]+gamma*V[next_state])
 			V[state] = np.max(q_vals)
 			pi[state] = greedify_policy(q_vals)
@@ -224,4 +234,4 @@ if __name__ == '__main__':
 	# policy_iteration(FrozenLakeClass('FrozenLake-v0'),gamma=1)
 	# plot_performance_policy_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
 	# value_iteration(FrozenLakeClass('FrozenLake-v0'),gamma=1)
-	plot_performance_value_iteration(env_class=FrozenLakeClass, name='FrozenLake-v0')
+	plot_performance_value_iteration(env_class=FrozenLakeClass, name='FrozenLake8x8-v0')
