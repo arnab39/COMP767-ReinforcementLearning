@@ -3,16 +3,13 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from KarmedTestbed import KarmedTestbed
+from BanditSamplingMethod import BanditSamplingMethod
 
-class UCBSampling():
+class UCBSampling(BanditSamplingMethod):
 	def __init__(self,bandit,c=0.1,seed=13):
-		self.k = bandit.k
-		self.T = bandit
+		super().__init__(bandit=bandit,seed=seed)
 		self.Q = np.zeros((self.k,))
-		self.trials = np.zeros((self.k,))
 		self.c = c
-		self.steps = 0
-		np.random.seed(seed)
 
 	def explore(self):
 		H = self.Q + self.c*np.sqrt(np.log(1.+self.steps)/(0.1+self.trials))
@@ -23,45 +20,10 @@ class UCBSampling():
 		return np.argmax(self.Q)
 
 	def performAction(self,a):
-		reward = self.T.actionPerformed(a)
-		self.trials[a] += 1
-		self.steps+=1
+		reward = super().performAction(a)
 		self.Q[a] = (self.trials[a]-1)*self.Q[a]/self.trials[a] + reward/self.trials[a]
 		return reward
 
-	def regret(self,action):
-		return np.max(self.T.Q)-self.T.Q[action]
-
-	def isBestArmChosen(self,action):
-		if action == np.argmax(self.T.Q):
-			return 1
-		return 0
-
-	def performance(self,steps=1000,train_steps=10,test_steps=5):
-		n_steps = train_steps + test_steps
-		train_return = []
-		test_return = []
-		regret_arr = []
-		optimal_action_arr = []
-		# breakpoint()
-		for s in range(steps):
-			if s%n_steps<train_steps:
-				action = self.explore()
-				reward = self.performAction(action)
-				train_return.append(reward)
-			else:
-				action = self.exploit()
-				reward = self.performAction(action)
-				test_return.append(reward)
-			regret_arr.append(self.regret(action))
-			optimal_action_arr.append(self.isBestArmChosen(action))
-		train_return = np.array(train_return)
-		test_return = np.array(test_return)
-		test_return = np.reshape(test_return,(-1,test_steps))
-		test_return = np.mean(test_return,axis=1)
-		regret_arr = np.array(regret_arr)
-		optimal_action_arr = np.array(optimal_action_arr)
-		return train_return, test_return, regret_arr, optimal_action_arr
 
 def evaluate_UCB(bandit,c,repeats=10,total_steps=1000,train_steps=10,test_steps=5):
 	train_return_arr = []
@@ -134,4 +96,4 @@ def plot_UCB_hyperparam(repeats,train_steps,test_steps,total_steps,c_range):
 	plt.show()
 
 if __name__ =='__main__':
-	plot_UCB_hyperparam(repeats=10,train_steps=10,test_steps=5,total_steps=1000,c_range=[0.5,1,2])
+	plot_UCB_hyperparam(repeats=100,train_steps=10,test_steps=5,total_steps=1000,c_range=[0.5,1,2])
