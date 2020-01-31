@@ -106,4 +106,4 @@ def plot_UCB_hyperparam(repeats,train_steps,test_steps,total_steps,c_range,smoot
 	plt.show()
 
 if __name__ =='__main__':
-	plot_UCB_hyperparam(repeats=50,train_steps=10,test_steps=5,total_steps=1000,c_range=[0.5,1,2],smooth=True)
+	plot_UCB_hyperparam(repeats=50,train_steps=10,test_steps=5,total_steps=1000,c_range=[0.2,1,5],smooth=True)
