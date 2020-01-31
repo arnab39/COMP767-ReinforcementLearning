@@ -2,6 +2,7 @@ import os, sys
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+from scipy.ndimage.filters import gaussian_filter1d
 from KarmedTestbed import KarmedTestbed
 from BanditSamplingMethod import BanditSamplingMethod
 
@@ -46,7 +47,7 @@ def evaluate_Thompson(bandit,sigma_known,repeats=10,total_steps=1000,train_steps
   optimal_action_arr = np.array(optimal_action_arr)
   return train_return_arr, test_return_arr, regret_arr, optimal_action_arr
 
-def plot_Thompson_hyperparam(repeats,train_steps,test_steps,total_steps,sigma_range):
+def plot_Thompson_hyperparam(repeats,train_steps,test_steps,total_steps,sigma_range,smooth=True):
   bandit = KarmedTestbed(k=10)
   for s in sigma_range:
     train_return_arr,test_return_arr,regret_arr, optimal_action_arr = evaluate_Thompson(bandit=bandit,sigma_known=s,repeats=repeats,total_steps=total_steps,train_steps=train_steps,test_steps=test_steps)
@@ -58,6 +59,15 @@ def plot_Thompson_hyperparam(repeats,train_steps,test_steps,total_steps,sigma_ra
     sterr_regret = np.std(regret_arr,axis=0)/np.sqrt(np.size(regret_arr,axis=0))
     avg_optimal_action_percent = np.mean(optimal_action_arr,axis=0)
     sterr_optimal_action_percent = np.std(optimal_action_arr,axis=0)/np.sqrt(np.size(optimal_action_arr,axis=0))
+    if smooth:
+      avg_train_return = gaussian_filter1d(avg_train_return,sigma=2)
+      sterr_train_return = gaussian_filter1d(sterr_train_return,sigma=2)
+      avg_test_return = gaussian_filter1d(avg_test_return,sigma=2)
+      sterr_test_return = gaussian_filter1d(sterr_test_return,sigma=2)
+      avg_regret = gaussian_filter1d(avg_regret,sigma=2)
+      sterr_regret = gaussian_filter1d(sterr_regret,sigma=2)
+      avg_optimal_action_percent = gaussian_filter1d(avg_optimal_action_percent,sigma=2)
+      sterr_optimal_action_percent = gaussian_filter1d(sterr_optimal_action_percent,sigma=2)
     plt.figure(1)
     plt.plot(avg_train_return,label='Thompson $\sigma$='+str(s))
     plt.fill_between(np.linspace(1,avg_train_return.shape[0],avg_train_return.shape[0]),avg_train_return-sterr_train_return,avg_train_return+sterr_train_return,alpha=0.4)
@@ -99,4 +109,4 @@ def plot_Thompson_hyperparam(repeats,train_steps,test_steps,total_steps,sigma_ra
   plt.show()
 
 if __name__ =='__main__':
-  plot_Thompson_hyperparam(repeats=25,train_steps=10,test_steps=5,total_steps=1000,sigma_range=[0.1,1,10])
+  plot_Thompson_hyperparam(repeats=50,train_steps=10,test_steps=5,total_steps=1000,sigma_range=[0.1,1,10],smooth=True)
