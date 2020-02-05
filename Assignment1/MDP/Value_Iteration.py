@@ -106,7 +106,9 @@ def plot_performance_value_iteration(env_class,name='FrozenLake-v0', iterations=
 	plt.figure(1);
 	plt.plot(train_idx,cumulative_reward_array_train_mean,label='Mean cumulative reward of an episode')
 	plt.fill_between(train_idx,cumulative_reward_array_train_mean-cumulative_reward_array_train_std,cumulative_reward_array_train_mean+cumulative_reward_array_train_std,alpha=0.4)
-	plt.axhline(y=np.max(cumulative_reward_array_train_plot),color='k',linestyle='--',label='Optimal performance')
+	optimal_reward_train = np.max(cumulative_reward_array_train_plot,axis=1)
+	plt.axhline(y=np.mean(optimal_reward_train),color='k',linestyle='--',label='Optimal performance')
+	plt.axhspan(np.mean(optimal_reward_train)-np.std(optimal_reward_train),np.mean(optimal_reward_train)+np.std(optimal_reward_train),alpha=0.2,color='k')
 	plt.title('Cumulative Reward during training vs episodes with Value iteration')
 	plt.ylabel('Cumulative reward')
 	plt.xlabel('Episodes')
@@ -115,7 +117,9 @@ def plot_performance_value_iteration(env_class,name='FrozenLake-v0', iterations=
 	plt.figure(2);
 	plt.plot(np.linspace(1,len(cumulative_reward_array_test_mean),len(cumulative_reward_array_test_mean)),cumulative_reward_array_test_mean,label='Mean cumulative reward of an episode')
 	plt.fill_between(np.linspace(1,len(cumulative_reward_array_test_mean),len(cumulative_reward_array_test_mean)),cumulative_reward_array_test_mean-cumulative_reward_array_test_std,cumulative_reward_array_test_mean+cumulative_reward_array_test_std,alpha=0.4)
-	plt.axhline(y=np.max(cumulative_reward_array_test_plot),color='k',linestyle='--',label='Optimal performance')
+	optimal_reward_test = np.max(cumulative_reward_array_test_plot,axis=1)
+	plt.axhline(y=np.mean(optimal_reward_test),color='k',linestyle='--',label='Optimal performance')
+	plt.axhspan(np.mean(optimal_reward_test)-np.std(optimal_reward_test),np.mean(optimal_reward_test)+np.std(optimal_reward_test),alpha=0.2,color='k')
 	plt.title('Cumulative Reward during testing vs episodes with Value iteration')
 	plt.ylabel('Cumulative reward')
 	plt.xlabel('Episodes')
@@ -124,7 +128,9 @@ def plot_performance_value_iteration(env_class,name='FrozenLake-v0', iterations=
 	plt.figure(3);
 	plt.plot(train_idx,total_steps_array_train_mean,label='Mean steps of an episode')
 	plt.fill_between(train_idx,total_steps_array_train_mean-total_steps_array_train_std,total_steps_array_train_mean+total_steps_array_train_std,alpha=0.4)
-	plt.axhline(y=np.min(total_steps_array_train_plot),color='k',linestyle='--',label='Optimal performance')
+	optimal_steps_train = np.min(total_steps_array_train_plot,axis=1)
+	plt.axhline(y=np.mean(optimal_steps_train),color='k',linestyle='--',label='Optimal performance')
+	plt.axhspan(np.mean(optimal_steps_train)-np.std(optimal_steps_train),np.mean(optimal_steps_train)+np.std(optimal_steps_train),alpha=0.2,color='k')
 	plt.title('Total steps per episode during training vs episodes with Value iteration')
 	plt.ylabel('Total steps/episode')
 	plt.xlabel('Episodes')
@@ -133,7 +139,9 @@ def plot_performance_value_iteration(env_class,name='FrozenLake-v0', iterations=
 	plt.figure(4);
 	plt.plot(np.linspace(1,len(total_steps_array_test_mean),len(total_steps_array_test_mean)),total_steps_array_test_mean,label='Mean steps of an episode')
 	plt.fill_between(np.linspace(1,len(total_steps_array_test_mean),len(total_steps_array_test_mean)),total_steps_array_test_mean-total_steps_array_test_std,total_steps_array_test_mean+total_steps_array_test_std,alpha=0.4)
-	plt.axhline(y=np.min(total_steps_array_test_plot),color='k',linestyle='--',label='Optimal performance')
+	optimal_steps_test = np.min(total_steps_array_test_plot,axis=1)
+	plt.axhline(y=np.mean(optimal_steps_test),color='k',linestyle='--',label='Optimal performance')
+	plt.axhspan(np.mean(optimal_steps_test)-np.std(optimal_steps_test),np.mean(optimal_steps_test)+np.std(optimal_steps_test),alpha=0.2,color='k')
 	plt.title('Total steps per episode during testing vs episodes with Value iteration')
 	plt.ylabel('Total steps/episode')
 	plt.xlabel('Episodes')
