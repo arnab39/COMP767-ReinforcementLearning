@@ -13,6 +13,14 @@ class BoltzmannExploration(BanditSamplingMethod):
 		self.temp = temp
 
 	def explore(self):
+		'''
+		defines the Boltzmann exploration strategy. The probability of choosing arm i is proportional to exp(Q_i/T). 
+		A random number is sampled and used to select the arm from the prob distribution
+		arguments:
+			
+		return:
+			action - chosen action after sampling from the prob distribution
+		'''
 		curr_temp = self.temp/(1.+self.steps)
 		H = np.exp(self.Q/curr_temp)
 		prob = H/np.sum(H)
@@ -22,15 +30,45 @@ class BoltzmannExploration(BanditSamplingMethod):
 		return action
 
 	def exploit(self):
+		'''
+		defines the Boltzmann exploitation strategy. The arm with the highest estimate of mean is chosen (greedy)
+		arguments:
+			
+		return:
+			action - greedily chosen action
+		'''
 		return np.argmax(self.Q)
 
 	def performAction(self,a):
+		'''
+		Performs action a (or pulls arm a) and updates the estimates of arm's returns
+		Estimates of Q are updated using the running-mean strategy
+		arguments:
+			a - action chosen by the algorithm
+		return:
+			reward - observed reward on performing action a on the k-armed bandit
+		'''
 		reward = super().performAction(a)
 		self.Q[a] = (self.trials[a]-1)*self.Q[a]/self.trials[a] + reward/self.trials[a]
 		return reward
 		
 
 def evaluate_BoltzmannExploration(bandit,temp,repeats=10,total_steps=1000,train_steps=10,test_steps=5):
+	'''
+	Evaluates the Boltzmann exploration strategy for different seeds on the same bandit problem and returns performance metrics
+	arguments:
+		bandit - a KarmedTestbed class instance, defining the bandit problem
+		temp - starting temperature for the Boltzmann sampling algorithm
+		repeats - number of seeds to repeat the experiment for
+		total_steps - total number of steps to run the experiment
+		train_steps - number of steps to train/update beliefs about arm distributions
+		test_steps - number of steps to test the return for the best estimated arm/action
+	return:
+		train_return_arr - numpy array containing returns obtained on training steps in the experiment
+		test_return_arr - numpy array containing returns obtained on testing steps in the experiment
+		regret_arr - numpy array containing regrets obtained at each step in the experiment
+		optimal_action_arr - numpy array containing if the optimal action was chosen at each step in the experiment
+	'''
 	train_return_arr = []
 	test_return_arr = []
 	regret_arr = []
@@ -49,6 +87,18 @@ def evaluate_BoltzmannExploration(bandit,temp,repeats=10,total_steps=1000,train_
 	return train_return_arr, test_return_arr, regret_arr, optimal_action_arr
 
 def plot_Boltzmann_hyperparam(repeats,train_steps,test_steps,total_steps,temp_range,smooth=True):
+	'''
+	Plots the performance metrics of Boltzmann exploration strategy for different initial Temperature values
+	arguments:
+		repeats - number of seeds to repeat the experiment for
+		train_steps - number of steps to train/update beliefs about arm distributions
+		test_steps - number of steps to test the return for the best estimated arm/action
+		total_steps - total number of steps to run the experiment
+		temp_range - list of values for starting temperature to evaluate the Boltzmann sampling algorithm
+		smooth - True/False flag to indicate smoothing the plots using gaussian_filter1d
+	return:
+
+	'''
 	bandit = KarmedTestbed(k=10)
 	for t in temp_range:
 		train_return_arr,test_return_arr,regret_arr, optimal_action_arr = evaluate_BoltzmannExploration(bandit=bandit,temp=t,repeats=repeats,total_steps=total_steps,train_steps=train_steps,test_steps=test_steps)
@@ -88,24 +138,32 @@ def plot_Boltzmann_hyperparam(repeats,train_steps,test_steps,total_steps,temp_ra
 		plt.fill_between(training_idx,avg_optimal_action_percent[training_idx]-sterr_optimal_action_percent[training_idx],avg_optimal_action_percent[training_idx]+sterr_optimal_action_percent[training_idx],alpha=0.4)
 		plt.errorbar(testing_idx,avg_optimal_action_percent[testing_idx],yerr=sterr_optimal_action_percent[testing_idx],linestyle='None',marker='*',markersize=10,color=p[0].get_color(),label='Boltzmann T='+str(t)+'(Test)')
 	plt.figure(1)
-	plt.title('Average Training return')
-	plt.xlabel('Steps')
-	plt.ylabel('Average reward')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Training return',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average reward',size=16)
 	plt.legend()
 	plt.figure(2)
-	plt.title('Average Testing return')
-	plt.xlabel('Steps')
-	plt.ylabel('Average reward')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Testing return',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average reward',size=16)
 	plt.legend()
 	plt.figure(3)
-	plt.title('Average Regret')
-	plt.xlabel('Steps')
-	plt.ylabel('Average regret')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Regret',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average regret',size=16)
 	plt.legend()
 	plt.figure(4)
-	plt.title('Percentage of optimal action choice')
-	plt.xlabel('Steps')
-	plt.ylabel('% Optimal Action')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Percentage of optimal action choice',size=18)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('% Optimal Action',size=16)
 	plt.legend()
 	plt.show()
 	

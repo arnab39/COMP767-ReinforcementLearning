@@ -13,20 +13,57 @@ class UCBSampling(BanditSamplingMethod):
 		self.c = c
 
 	def explore(self):
+		'''
+		defines the UCB exploration strategy. The arm with the highest upper confidence bound is chosen
+		arguments:
+			
+		return:
+			action - chosen action after sampling from the prob distribution
+		'''
 		H = self.Q + self.c*np.sqrt(np.log(1.+self.steps)/(0.1+self.trials))
 		action = np.argmax(H)
 		return action
 
 	def exploit(self):
+		'''
+		defines the UCB exploitation strategy. The arm with the highest estimate of mean is chosen (greedy)
+		arguments:
+			
+		return:
+			action - greedily chosen action
+		'''
 		return np.argmax(self.Q)
 
 	def performAction(self,a):
+		'''
+		Performs action a (or pulls arm a) and updates the estimates of arm's returns
+		Estimates of Q are updated using the running-mean strategy
+		arguments:
+			a - action chosen by the algorithm
+		return:
+			reward - observed reward on performing action a on the k-armed bandit
+		'''
 		reward = super().performAction(a)
 		self.Q[a] = (self.trials[a]-1)*self.Q[a]/self.trials[a] + reward/self.trials[a]
 		return reward
 
 
 def evaluate_UCB(bandit,c,repeats=10,total_steps=1000,train_steps=10,test_steps=5):
+	'''
+	Evaluates the UCB exploration strategy for different seeds on the same bandit problem and returns performance metrics
+	arguments:
+		bandit - a KarmedTestbed class instance, defining the bandit problem
+		c - value of c for the UCB sampling algorithm
+		repeats - number of seeds to repeat the experiment for
+		total_steps - total number of steps to run the experiment
+		train_steps - number of steps to train/update beliefs about arm distributions
+		test_steps - number of steps to test the return for the best estimated arm/action
+	return:
+		train_return_arr - numpy array containing returns obtained on training steps in the experiment
+		test_return_arr - numpy array containing returns obtained on testing steps in the experiment
+		regret_arr - numpy array containing regrets obtained at each step in the experiment
+		optimal_action_arr - numpy array containing if the optimal action was chosen at each step in the experiment
+	'''
 	train_return_arr = []
 	test_return_arr = []
 	regret_arr = []
@@ -45,6 +82,18 @@ def evaluate_UCB(bandit,c,repeats=10,total_steps=1000,train_steps=10,test_steps=
 	return train_return_arr, test_return_arr, regret_arr, optimal_action_arr
 
 def plot_UCB_hyperparam(repeats,train_steps,test_steps,total_steps,c_range,smooth=True):
+	'''
+	Plots the performance metrics of UCB exploration strategy for different c values
+	arguments:
+		repeats - number of seeds to repeat the experiment for
+		train_steps - number of steps to train/update beliefs about arm distributions
+		test_steps - number of steps to test the return for the best estimated arm/action
+		total_steps - total number of steps to run the experiment
+		c_range - list of values for c to evaluate the UCB sampling algorithm
+		smooth - True/False flag to indicate smoothing the plots using gaussian_filter1d
+	return:
+
+	'''
 	bandit = KarmedTestbed(k=10)
 	for c in c_range:
 		train_return_arr,test_return_arr,regret_arr, optimal_action_arr = evaluate_UCB(bandit=bandit,c=c,repeats=repeats,total_steps=total_steps,train_steps=train_steps,test_steps=test_steps)
@@ -84,24 +133,32 @@ def plot_UCB_hyperparam(repeats,train_steps,test_steps,total_steps,c_range,smoot
 		plt.fill_between(training_idx,avg_optimal_action_percent[training_idx]-sterr_optimal_action_percent[training_idx],avg_optimal_action_percent[training_idx]+sterr_optimal_action_percent[training_idx],alpha=0.4)
 		plt.errorbar(testing_idx,avg_optimal_action_percent[testing_idx],yerr=sterr_optimal_action_percent[testing_idx],linestyle='None',marker='*',markersize=10,color=p[0].get_color(),label='UCB C='+str(c)+'(Test)')
 	plt.figure(1)
-	plt.title('Average Training return')
-	plt.xlabel('Steps')
-	plt.ylabel('Average reward')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Training return',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average reward',size=16)
 	plt.legend()
 	plt.figure(2)
-	plt.title('Average Testing return')
-	plt.xlabel('Steps')
-	plt.ylabel('Average reward')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Testing return',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average reward',size=16)
 	plt.legend()
 	plt.figure(3)
-	plt.title('Average Regret')
-	plt.xlabel('Steps')
-	plt.ylabel('Average regret')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Average Regret',size=16)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('Average regret',size=16)
 	plt.legend()
 	plt.figure(4)
-	plt.title('Percentage of optimal action choice')
-	plt.xlabel('Steps')
-	plt.ylabel('% Optimal Action')
+	plt.xticks(fontsize=12)
+	plt.yticks(fontsize=12)
+	plt.title('Percentage of optimal action choice',size=18)
+	plt.xlabel('Steps',size=16)
+	plt.ylabel('% Optimal Action',size=16)
 	plt.legend()
 	plt.show()
 
