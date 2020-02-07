@@ -3,6 +3,16 @@ import gym
 
 class FrozenLakeClass():
 	def __init__(self,name='FrozenLake-v0',slippery=False,seed=13,gamma=0.9):
+		'''
+		FrozenLake environment class to run MDP experiments
+		arguments:
+			name - to choose between the 4x4 or 8x8 environments
+			slippery - True/False flag to control the stochasticity of the environment
+			seed - random seed to ensure reproducibility of experiments
+			gamma - discount factor			
+		return:
+
+		'''
 		self.env = gym.make(name,is_slippery=slippery)
 		self.env.seed(seed)
 		self.env.reset()
@@ -16,12 +26,34 @@ class FrozenLakeClass():
 		self.max_T = self.num_states*3
 
 	def valid_action(self, a):
+		'''
+		Checks if action is valid before performing in gym environment
+		arguments:
+			a - action
+		return:
+			Assertion error if invalid action
+		'''
 		assert self.actions.contains(a), "Invalid action chosen!!"
 
 	def valid_state(self, s):
+		'''
+		Checks if state is valid before passing to gym environment
+		arguments:
+			s - action
+		return:
+			Assertion error if invalid state
+		'''
 		assert self.obs.contains(s), "Invalid state reached!!"
 
 	def transition_reward_matrix(self):
+		'''
+		Creates the transition and reward matrices for the MDP
+		arguments:
+			
+		return:
+			P - transition matrix of shape |S|x|A|x|S|
+			R - reward matrix of shape |S|x|A|x|S|
+		'''
 		P = np.zeros((self.num_states,self.num_actions,self.num_states))
 		R = np.zeros((self.num_states,self.num_actions,self.num_states))
 		for s in range(self.num_states):
@@ -33,6 +65,14 @@ class FrozenLakeClass():
 		return P,R
 
 	def run_episode(self, policy):
+		'''
+		Runs an episode with a given policy
+		arguments:
+			policy - a prob over action space matrix for each state, shape |S|x|A|
+		return:
+			cumulative_reward - total reward obtained during the episode
+			total_steps - number of steps in the episode
+		'''
 		attempts = 1
 		cumulative_reward = 0
 		total_steps = 0

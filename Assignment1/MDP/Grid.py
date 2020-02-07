@@ -3,6 +3,15 @@ import emdp.gridworld as gw
 
 class ExampleGridClass():
 	def __init__(self, seed, grid_size=5, gamma=0.9):
+		'''
+		GridWorld environment class to run MDP experiments
+		arguments:
+			seed - random seed to ensure reproducibility of experiments
+			grid_size - size of the square grid world
+			gamma - discount factor			
+		return:
+
+		'''
 		self.grid_size = grid_size
 		self.seed = seed
 		np.random.seed(self.seed)
@@ -18,6 +27,14 @@ class ExampleGridClass():
 		self.max_T = self.num_states*3
  	
 	def set_transition_and_reward(self):
+		'''
+		Creates the transition and reward matrices for the custom gridworld MDP
+		arguments:
+			
+		return:
+			P - transition matrix of shape |S|x|A|x|S|
+			R - reward matrix of shape |S|x|A|
+		'''
 		self.start_prob[np.random.randint(low=0,high=self.num_states-1)] = 1		
 		self.transition[6,:,:] = 0
 		self.transition[6,:,21] = 1
@@ -27,6 +44,14 @@ class ExampleGridClass():
 		return 
 	
 	def run_episode(self, policy):
+		'''
+		Runs an episode with a given policy
+		arguments:
+			policy - a prob over action space matrix for each state, shape |S|x|A|
+		return:
+			cumulative_reward - total reward obtained during the episode
+			total_steps - number of steps in the episode
+		'''
 		self.grid.reset()
 		attempts = 1
 		cumulative_reward = 0
