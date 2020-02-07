@@ -4,4 +4,4 @@ The codes can be run and evaluated online on the associated [Colab notebook](htt
 Todo:
 + [ ] Add description of codes
 + [ ] Add notes for report
-+ [ ] Complete report and upload it
++ [X] Complete report and upload it
