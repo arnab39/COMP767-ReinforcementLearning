@@ -29,13 +29,11 @@ class Control_SARSALambda():
 		return flattened_tile_idxs
 
 	def estimate_Q_function_approx(self,alpha,lamda,episodes=25,bins=8,tilings=8,seed=13,verbose=False):
-		print(verbose)
 		ATC = AsymmetricTileCoding(dims=self.environment.dims,bins=bins,tilings=tilings,state_limits=[[0,0],[1,1]],seed=seed)
 		if self.functionApprox == 'linear':
 			weights = np.zeros((tilings*(bins**self.environment.dims),len(self.environment.actions)))
 		else:
 			raise NotImplementedError
-			print(verbose)
 		weights = self.SARSA_lambda(tileCoding=ATC,func=weights,alpha=alpha,lamda=lamda,episodes=episodes,verbose=verbose)
 		return ATC,weights
 
@@ -66,7 +64,6 @@ class Control_SARSALambda():
 		return tileCode,action
 
 	def SARSA_lambda(self,tileCoding,func,alpha,lamda,epsilon=0.1,episodes=25,verbose=False):
-		print(verbose)
 		for e in tqdm(range(episodes)):
 			if verbose:
 					print("Starting episode {}".format(e+1))
@@ -80,11 +77,11 @@ class Control_SARSALambda():
 					SARSA_error = reward - self.apply_function_approx(func,curr_action,curr_tileCode,bins=tileCoding.bins)
 					curr_action_idx = np.where(np.array(self.environment.actions)==curr_action)[0][0]
 					weight_derivative = np.zeros(func.shape)
-					weight_derivative[curr_tileCode,curr_action_idx]=1
+					weight_derivative[self.construct_flattened_tile_idx(curr_tileCode,tileCoding.bins),curr_action_idx]=1
 				else:
 					raise NotImplementedError
 				if self.traces =='replacing':
-					eligibility_trace = weight_derivative
+					eligibility_trace = np.maximum(eligibility_trace,weight_derivative)
 				elif self.traces =='accumulating':
 					eligibility_trace = 1 + weight_derivative
 				else:
@@ -93,10 +90,11 @@ class Control_SARSALambda():
 					next_tileCode,next_action = self.epsilon_greedy(tileCoding,func,epsilon)
 					SARSA_error += self.environment.gamma*self.apply_function_approx(func,next_action,next_tileCode,bins=tileCoding.bins)
 				if verbose:
+					print(curr_tileCode,np.where(eligibility_trace>0))
 					print(SARSA_error,np.max(eligibility_trace),np.shape(eligibility_trace))
-					# plt.subplot(312);plt.imshow(func); plt.colorbar();# plt.show()
-					# plt.subplot(311);plt.imshow(curr_state_rep); plt.colorbar();# plt.show()
-					# plt.subplot(313);plt.imshow(next_state_rep); plt.colorbar(); plt.show()
+					plt.subplot(311);plt.plot(func[:,0],'*'); 
+					plt.subplot(312);plt.plot(func[:,1],'*'); 
+					plt.subplot(313);plt.plot(func[:,2],'*'); plt.show()
 					self.plot_estimated_value_func(tileCoding,func)
 				func += (alpha/tileCoding.tilings)*SARSA_error*eligibility_trace
 				if is_terminated:
@@ -116,9 +114,9 @@ class Control_SARSALambda():
 		estimated_val_stationary = np.array([self.apply_function_approx(func,0,tileCoding.getCodedState(s)) for s in sampled_states])
 		estimated_val_forward = np.array([self.apply_function_approx(func,1,tileCoding.getCodedState(s)) for s in sampled_states])
 		from mpl_toolkits import mplot3d
-		ax1=plt.subplot(311,projection='3d'); scatt = ax1.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_back,cmap='viridis'); plt.colorbar(scatt)
-		ax2=plt.subplot(312,projection='3d'); scatt = ax2.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_stationary,cmap='viridis'); plt.colorbar(scatt)
-		ax3=plt.subplot(313,projection='3d'); scatt = ax3.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_forward,cmap='viridis'); plt.colorbar(scatt)
+		ax1=plt.subplot(311,projection='3d'); scatt = ax1.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_back,c=estimated_val_back,cmap='viridis'); plt.colorbar(scatt)
+		ax2=plt.subplot(312,projection='3d'); scatt = ax2.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_stationary,c=estimated_val_stationary,cmap='viridis'); plt.colorbar(scatt)
+		ax3=plt.subplot(313,projection='3d'); scatt = ax3.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_forward,c=estimated_val_forward,cmap='viridis'); plt.colorbar(scatt)
 		plt.show()
 
 	'''
