@@ -29,12 +29,14 @@ class Control_SARSALambda():
 		return flattened_tile_idxs
 
 	def estimate_Q_function_approx(self,alpha,lamda,episodes=25,bins=8,tilings=8,seed=13,verbose=False):
+		print(verbose)
 		ATC = AsymmetricTileCoding(dims=self.environment.dims,bins=bins,tilings=tilings,state_limits=[[0,0],[1,1]],seed=seed)
 		if self.functionApprox == 'linear':
 			weights = np.zeros((tilings*(bins**self.environment.dims),len(self.environment.actions)))
 		else:
 			raise NotImplementedError
-		weights = self.SARSA_lambda(ATC,weights,alpha,lamda,episodes,verbose)
+			print(verbose)
+		weights = self.SARSA_lambda(tileCoding=ATC,func=weights,alpha=alpha,lamda=lamda,episodes=episodes,verbose=verbose)
 		return ATC,weights
 
 	def apply_function_approx(self,func,action,tileCode,bins=None):
@@ -64,6 +66,7 @@ class Control_SARSALambda():
 		return tileCode,action
 
 	def SARSA_lambda(self,tileCoding,func,alpha,lamda,epsilon=0.1,episodes=25,verbose=False):
+		print(verbose)
 		for e in tqdm(range(episodes)):
 			if verbose:
 					print("Starting episode {}".format(e+1))
@@ -131,8 +134,8 @@ class Control_SARSALambda():
 if __name__=='__main__':
 	M = MountainCar()
 	control_SARSA = Control_SARSALambda(environment=M,functionApprox='linear',traces='replacing')
-	ATC,func_approximator = control_SARSA.estimate_Q_function_approx(alpha=0.1,lamda=0,episodes=100,verbose=True)
-	# control_SARSA.plot_estimated_value_func(ATC,func_approximator)
+	ATC,func_approximator = control_SARSA.estimate_Q_function_approx(alpha=0.1,lamda=0,episodes=20,verbose=False)
+	control_SARSA.plot_estimated_value_func(ATC,func_approximator)
 	'''
 	num_alpha = 25
 	num_lamda = 6
