@@ -38,7 +38,7 @@ class AsymmetricTileCoding():
 			tile_idxs.append(tile_idx)
 		tile_idxs = np.array(tile_idxs)
 		# state_space = np.zeros((self.tilings,)+self.dims*(self.bins,))
-		return tile_idxs
+		return tile_idxs.T 		# returned numpy array will be of shape (num_tilings,dims) --> each row stores the indices of the bin that should be 1
 
 if __name__=='__main__':
 	ATC = AsymmetricTileCoding(dims=2,bins=4,tilings=4,state_limits=[[0,0],[1,1]])
@@ -48,7 +48,7 @@ if __name__=='__main__':
 		r,is_terminated = M.takeAction(-1)
 		print(r,is_terminated,M.curr_state,M.getNormalizedState())
 		tileCodes = ATC.getCodedState(M.getNormalizedState())
-		print(tileCodes.shape,tileCodes.T)
+		print(tileCodes.shape,tileCodes)
 		if is_terminated:
 			R.reset()
 	print(ATC.offsets)
