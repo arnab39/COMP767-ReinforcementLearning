@@ -28,13 +28,13 @@ class Control_SARSALambda():
 		flattened_tile_idxs = np.array([(bins**dims)*tile+np.sum(tileCode[tile]*(np.logspace(dims-1,0,dims,base=bins))) for tile in range(tilings)]).astype(int)
 		return flattened_tile_idxs
 
-	def estimate_Q_function_approx(self,alpha,lamda,episodes=25,bins=8,tilings=8,seed=13,verbose=False):
+	def estimate_Q_function_approx(self,alpha,lamda,episodes=25,bins=8,tilings=8,epsilon=0.1,seed=13,verbose=False):
 		ATC = AsymmetricTileCoding(dims=self.environment.dims,bins=bins,tilings=tilings,state_limits=[[0,0],[1,1]],seed=seed)
 		if self.functionApprox == 'linear':
 			weights = np.zeros((tilings*(bins**self.environment.dims),len(self.environment.actions)))
 		else:
 			raise NotImplementedError
-		weights = self.SARSA_lambda(tileCoding=ATC,func=weights,alpha=alpha,lamda=lamda,episodes=episodes,verbose=verbose)
+		weights = self.SARSA_lambda(tileCoding=ATC,func=weights,alpha=alpha,lamda=lamda,epsilon=epsilon,episodes=episodes,verbose=verbose)
 		return ATC,weights
 
 	def apply_function_approx(self,func,action,tileCode,bins=None):
@@ -64,12 +64,12 @@ class Control_SARSALambda():
 		return tileCode,action
 
 	def SARSA_lambda(self,tileCoding,func,alpha,lamda,epsilon=0.1,episodes=25,verbose=False):
-		for e in tqdm(range(episodes)):
+		for e in range(episodes):
 			if verbose:
 					print("Starting episode {}".format(e+1))
 			self.environment.reset()
 			curr_tileCode,curr_action = self.epsilon_greedy(tileCoding,func,epsilon)
-			max_T = 2000		# max time steps to run an episode
+			max_T = 1000		# max time steps to run an episode
 			eligibility_trace = np.zeros(func.shape)
 			for iter in range(max_T):
 				reward,is_terminated = self.environment.takeAction(curr_action)
@@ -83,7 +83,7 @@ class Control_SARSALambda():
 				if self.traces =='replacing':
 					eligibility_trace = np.maximum(eligibility_trace,weight_derivative)
 				elif self.traces =='accumulating':
-					eligibility_trace = 1 + weight_derivative
+					eligibility_trace = eligibility_trace + weight_derivative
 				else:
 					raise NotImplementedError
 				if not is_terminated:
@@ -97,6 +97,9 @@ class Control_SARSALambda():
 					plt.subplot(313);plt.plot(func[:,2],'*'); plt.show()
 					self.plot_estimated_value_func(tileCoding,func)
 				func += (alpha/tileCoding.tilings)*SARSA_error*eligibility_trace
+				# if np.sum(SARSA_error*eligibility_trace)<1e-8:
+					# learning has converged because change in func is less than tolerance (1e-8)
+					# return func
 				if is_terminated:
 					break
 				eligibility_trace = lamda*self.environment.gamma*eligibility_trace
@@ -107,7 +110,7 @@ class Control_SARSALambda():
 	def plot_estimated_value_func(self,tileCoding,func):
 		lower_limit = self.environment.state_min
 		upper_limit = self.environment.state_max
-		sampled_states = np.random.uniform(0,1,(50,self.environment.dims))
+		sampled_states = np.random.uniform(0,1,(500,self.environment.dims))
 		# X, Y = np.meshgrid(sampled_states[:,0],sampled_states[:,1])
 		# print([s.shape for s in zip(X,Y)])
 		estimated_val_back = np.array([self.apply_function_approx(func,-1,tileCoding.getCodedState(s)) for s in sampled_states])
@@ -118,50 +121,57 @@ class Control_SARSALambda():
 		ax2=plt.subplot(312,projection='3d'); scatt = ax2.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_stationary,c=estimated_val_stationary,cmap='viridis'); plt.colorbar(scatt)
 		ax3=plt.subplot(313,projection='3d'); scatt = ax3.scatter(sampled_states[:,0],sampled_states[:,1],estimated_val_forward,c=estimated_val_forward,cmap='viridis'); plt.colorbar(scatt)
 		plt.show()
-
-	'''
-	def calculate_value_func_MSE(self,sparseCoding,func):
-		lower_limit = self.environment.state_min
-		upper_limit = self.environment.state_max
-		sampled_states = np.linspace(lower_limit,upper_limit,21)
-		estimated_val = np.array([self.apply_function_approx(func,sparseCoding.getCodedState(s)) for s in sampled_states])
-		mse = np.mean((sampled_states-estimated_val)**2)
-		return mse
-	'''
+	
+	def calculate_steps_to_goal(self,tileCoding,func):
+		self.environment.reset()
+		curr_tileCode,curr_action = self.epsilon_greedy(tileCoding,func,epsilon=0.0) 	# choose the greedy action now
+		max_T = 1000		# max time steps to run an episode
+		steps = 0
+		for iter in range(max_T):
+			reward,is_terminated = self.environment.takeAction(curr_action)
+			steps+=1
+			if not is_terminated:
+				next_tileCode,next_action = self.epsilon_greedy(tileCoding,func,epsilon=0.0) 	# choose the greedy action again
+			else:
+				# print(steps,reward)
+				break
+			curr_tileCode = next_tileCode
+			curr_action = next_action
+		return steps
 	
 if __name__=='__main__':
+	# M = MountainCar()
+	# control_SARSA = Control_SARSALambda(environment=M,functionApprox='linear',traces='replacing')
+	# ATC,func_approximator = control_SARSA.estimate_Q_function_approx(alpha=0.4,lamda=0.6,epsilon=0.1,episodes=100,verbose=False)
+	# control_SARSA.plot_estimated_value_func(ATC,func_approximator)
+	epsilon = 0.1
+	num_alpha = 10
+	num_lamda = 1
+	colors = ['darkviolet','blue','green','gold','darkorange','red']
+	lamda_range = [0.7]#[0,0.4,0.7,0.84,0.92,0.98] #np.linspace(0,1,num_lamda)
+	alpha_range = np.linspace(0.05,.5,num_alpha)
+	seeds = 4
 	M = MountainCar()
 	control_SARSA = Control_SARSALambda(environment=M,functionApprox='linear',traces='replacing')
-	ATC,func_approximator = control_SARSA.estimate_Q_function_approx(alpha=0.1,lamda=0,episodes=20,verbose=False)
-	control_SARSA.plot_estimated_value_func(ATC,func_approximator)
-	'''
-	num_alpha = 25
-	num_lamda = 6
-	colors = ['darkviolet','blue','green','gold','darkorange','red']
-	lamda_range = np.linspace(0,1,num_lamda)
-	alpha_range = np.linspace(0,1,num_alpha)
-	seeds = 50
-	R = RandomWalker()
-	pred_TD = Prediction_TDLambda(environment=R,policy=None,functionApprox='linear')
-	mean_mse_arr = np.zeros((num_lamda,num_alpha))
-	std_mse_arr = np.zeros((num_lamda,num_alpha))
-	for l_idx,lamda in tqdm(enumerate(lamda_range)):
-		for a_idx,alpha in enumerate(alpha_range):
-			mse_arr = np.zeros((seeds,))
+	mean_steps_arr = np.zeros((num_lamda,num_alpha))
+	std_steps_arr = np.zeros((num_lamda,num_alpha))
+	for l_idx,lamda in enumerate(tqdm(lamda_range)):
+		for a_idx,alpha in enumerate(tqdm(alpha_range)):
+			step_arr = np.zeros((seeds,))
 			for seed in range(seeds):
-				SCC,val_func_estimator = pred_TD.estimate_value_function_approx(alpha=alpha,lamda=lamda,episodes=80,seed=seed,verbose=False)
-				mse_arr[seed] = pred_TD.calculate_value_func_MSE(SCC,val_func_estimator)
-			mean_mse_arr[l_idx,a_idx] = np.mean(mse_arr)
-			std_mse_arr[l_idx,a_idx] = np.std(mse_arr)/np.sqrt(seeds)
-	# pred_TD.plot_estimated_value_func(SCC,val_func_estimator)
-		plt.plot(alpha_range,mean_mse_arr[l_idx],color=colors[l_idx],label="$\lambda$={:.3f}".format(lamda))
-		plt.fill_between(alpha_range,mean_mse_arr[l_idx]-std_mse_arr[l_idx],mean_mse_arr[l_idx]+std_mse_arr[l_idx],color=colors[l_idx],alpha=0.4)
-	plt.ylim(top=0.6)
+				ATC,func_approximator = control_SARSA.estimate_Q_function_approx(alpha=alpha,lamda=lamda,epsilon=epsilon,episodes=100,seed=seed,verbose=False)
+				step_arr[seed] = control_SARSA.calculate_steps_to_goal(ATC,func_approximator)
+				# print(step_arr)
+			mean_steps_arr[l_idx,a_idx] = np.mean(step_arr)
+			std_steps_arr[l_idx,a_idx] = np.std(step_arr)/np.sqrt(seeds)
+		plt.plot(alpha_range,mean_steps_arr[l_idx],color=colors[l_idx],label="$\lambda$={:.3f}".format(lamda))
+		plt.fill_between(alpha_range,mean_steps_arr[l_idx]-std_steps_arr[l_idx],mean_steps_arr[l_idx]+std_steps_arr[l_idx],color=colors[l_idx],alpha=0.4)
+	# plt.ylim(top=400)
 	plt.legend(fontsize=14)
 	plt.xticks(fontsize=13)
 	plt.yticks(fontsize=13)
 	plt.xlabel('$\\alpha$',size=14)
-	plt.ylabel('Mean Squared Error',size=14)
-	plt.title('Performance of TD($\lambda$) with accumulating traces',fontsize=16)
+	plt.ylabel('Steps to goal per episode',size=14)
+	plt.title('Performance of SARSA($\lambda$) with replacing traces',fontsize=16)
 	plt.show()
-	'''
+	

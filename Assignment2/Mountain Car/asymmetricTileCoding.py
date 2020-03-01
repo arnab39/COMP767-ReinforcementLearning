@@ -23,7 +23,7 @@ class AsymmetricTileCoding():
 		for dim in range(self.dims):
 			dim_displacement = 2*dim+1	# select sequential odd numbers starting from 1
 			dim_offsets = self.states_min[dim]+np.linspace(0,dim_displacement*self.interval[dim],self.tilings+1)[:-1]
-			dim_offsets = dim_offsets - np.mean(dim_offsets) 	# centering the offsets to have roughly symmetric spanning of the state space
+			dim_offsets = self.states_min[dim]+dim_offsets - np.mean(dim_offsets) 	# centering the offsets to have roughly symmetric spanning of the state space
 			self.offsets.append(dim_offsets)
 		self.offsets = np.array(self.offsets)
 
@@ -41,7 +41,7 @@ class AsymmetricTileCoding():
 		return tile_idxs.T 		# returned numpy array will be of shape (num_tilings,dims) --> each row stores the indices of the bin that should be 1
 
 if __name__=='__main__':
-	ATC = AsymmetricTileCoding(dims=2,bins=4,tilings=4,state_limits=[[0,0],[1,1]])
+	ATC = AsymmetricTileCoding(dims=2,bins=8,tilings=8,state_limits=[[0,0],[1,1]])
 	print(ATC.offsets)
 	M = MountainCar()
 	for steps in range(10):
