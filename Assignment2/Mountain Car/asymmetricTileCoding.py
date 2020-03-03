@@ -18,7 +18,7 @@ class AsymmetricTileCoding():
 			raise NotImplementedError
 		if self.tilings<4*self.dims:
 			warnings.warn("Number of tilings should ideally be higher for proper asymmetric coding",RuntimeWarning)
-		self.interval = [(self.states_max[dim]-self.states_min[dim])/(self.bins) for dim in range(self.dims)]
+		self.interval = np.array([(self.states_max[dim]-self.states_min[dim])/(self.bins) for dim in range(self.dims)])
 		self.offsets = []
 		for dim in range(self.dims):
 			dim_displacement = 2*dim+1	# select sequential odd numbers starting from 1
@@ -30,6 +30,7 @@ class AsymmetricTileCoding():
 	def getCodedState(self,state):
 		state_dim = 1 if np.shape(state)==() else np.shape(state)[0]
 		assert state_dim==self.dims, "State to be coded ({}) is of different dimension than the Asymmetric Tile Coding object ({})!".format(state_dim,self.dims)
+		'''
 		tile_idxs = []
 		for dim in range(self.dims):
 			tile_idx = np.floor((state[dim]-self.offsets[dim])/self.interval[dim]).astype(int)
@@ -37,7 +38,12 @@ class AsymmetricTileCoding():
 			tile_idx[tile_idx<0]=0						# ensuring any index is not less than 0 (min state idx)
 			tile_idxs.append(tile_idx)
 		tile_idxs = np.array(tile_idxs)
-		# state_space = np.zeros((self.tilings,)+self.dims*(self.bins,))
+		# single line implementation below :)
+		'''
+		tile_idxs = np.floor((state[:,np.newaxis]-self.offsets)/self.interval[:,np.newaxis]).astype(int)
+		tile_idxs[tile_idxs>self.bins-1]=self.bins-1
+		tile_idxs[tile_idxs<0]=0
+		# assert np.all(tile_idxs2.shape==tile_idxs.shape) and np.all(tile_idxs==tile_idxs2), "Error in vectorized TileCoding"
 		return tile_idxs.T 		# returned numpy array will be of shape (num_tilings,dims) --> each row stores the indices of the bin that should be 1
 
 if __name__=='__main__':

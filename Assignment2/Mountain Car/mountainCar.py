@@ -36,10 +36,10 @@ class MountainCar():
 		is_terminated = gym_ret[2]
 		if not is_terminated:
 			# deduct reward for spending time, with each passing time when episode is not terminated, -1 reward is obtained
-			reward = -1
+			reward-=1
 		if is_terminated and reward<0:
 			# the environment ran longer than max_steps
-			reward = -1
+			reward-=1
 		return reward, is_terminated
 
 	def reset(self):
